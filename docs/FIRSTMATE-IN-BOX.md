@@ -6,8 +6,8 @@ Run [firstmate](https://github.com/Charikshith/firstmate) (a supervisor that run
 
 1. **Image** (done). `Dockerfile.firstmate` adds tmux, jq, procps, bash, unzip, gh, treehouse, no-mistakes, the five `*-axi` tools and the firstmate checkout (`/opt/firstmate`, pinned commit) to `agent-box`. All versions are pinned in the file.
    ```powershell
-   docker build -t agent-box D:\Code\agent-box
-   docker build -f Dockerfile.firstmate -t agent-box-fm D:\Code\agent-box
+   docker build -f Dockerfile.base -t agent-box .
+   docker build -f Dockerfile.firstmate -t agent-box-fm .
    ```
 2. **Long-lived container** (done). `docagent fm ...` (below).
 3. **First-run bootstrap** (script done, logins are yours). `fm-box-init` runs inside the box: sets `FM_HOME`, writes `config/backend` = `tmux`, checks the tools, runs firstmate's own `fm-bootstrap.sh`, and prints what is left. `docagent fm start` runs it after creating the box; rerun any time: `docker exec firstmate-box fm-box-init`.
