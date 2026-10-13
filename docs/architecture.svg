@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 560" width="920" height="560" role="img" aria-labelledby="t1 d1">
+  <title id="t1">Firstmate running inside one agent-box container</title>
+  <desc id="d1">A Windows host runs Docker Desktop. One long-lived firstmate-box container holds a tmux session with the first mate and worker windows, plus the firstmate repo, watcher, no-mistakes and lavish. Named volumes hold state. The container talks to GitHub and Anthropic.</desc>
+  <style>
+    text { fill: #111418; font: 13px system-ui, -apple-system, "Segoe UI", sans-serif; }
+    .sm { font-size: 11.5px; fill: #4a5360; }
+    .b { font-weight: 700; }
+    .box { stroke: #9aa4b2; stroke-width: 1.5; }
+    .arrow { stroke: #0b5cd5; stroke-width: 2; fill: none; marker-end: url(#ah); }
+    .dash { stroke-dasharray: 5 4; }
+  </style>
+  <rect width="920" height="560" fill="#ffffff"/>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0b5cd5"/></marker>
+  </defs>
+
+  <rect id="host" class="box" x="8" y="8" width="904" height="544" rx="12" fill="#eef3fb"/>
+  <text class="b" x="24" y="32">Windows host (no WSL)</text>
+
+  <rect id="ps" class="box" x="24" y="52" width="190" height="86" rx="8" fill="#fff4e0"/>
+  <title>PowerShell launcher</title>
+  <text class="b" x="36" y="76">docagent fm</text>
+  <text class="sm" x="36" y="95">start / attach / stop / status</text>
+  <text class="sm" x="36" y="112">(extends today's docagent.ps1)</text>
+
+  <rect id="browser" class="box" x="24" y="160" width="190" height="70" rx="8" fill="#fff4e0"/>
+  <text class="b" x="36" y="184">Your browser</text>
+  <text class="sm" x="36" y="203">Lavish pages on localhost:4387</text>
+
+  <rect id="disk" class="box" x="24" y="252" width="190" height="70" rx="8" fill="#fff4e0"/>
+  <text class="b" x="36" y="276">D:\Code (optional)</text>
+  <text class="sm" x="36" y="295">only if projects stay on Windows</text>
+
+  <rect id="docker" class="box" x="244" y="44" width="652" height="496" rx="10" fill="#e6f4ea"/>
+  <text class="b" x="260" y="68">Docker Desktop</text>
+
+  <rect id="ctr" class="box" x="264" y="82" width="612" height="290" rx="10" fill="#f1ecfa"/>
+  <text class="b" x="280" y="106">firstmate-box container (long-lived, user "node")</text>
+  <text class="sm" x="280" y="124">image = agent-box + tmux, jq, gh, treehouse, no-mistakes, axi tools, firstmate repo</text>
+
+  <rect id="tmux" class="box" x="280" y="138" width="360" height="218" rx="8" fill="#eef3fb"/>
+  <text class="b" x="294" y="160">tmux session "firstmate"</text>
+  <rect class="box" x="294" y="172" width="332" height="40" rx="6" fill="#ffffff"/>
+  <text x="306" y="190" class="b">First mate (Claude Code)</text>
+  <text x="306" y="205" class="sm">talks to you, never edits projects</text>
+  <rect class="box" x="294" y="222" width="100" height="56" rx="6" fill="#ffffff"/>
+  <text x="304" y="244" class="b">worker 1</text><text x="304" y="262" class="sm">treehouse copy</text>
+  <rect class="box" x="402" y="222" width="100" height="56" rx="6" fill="#ffffff"/>
+  <text x="412" y="244" class="b">worker 2</text><text x="412" y="262" class="sm">treehouse copy</text>
+  <rect class="box dash" x="510" y="222" width="116" height="56" rx="6" fill="#ffffff"/>
+  <text x="522" y="244" class="b">worker N</text><text x="522" y="262" class="sm">one tmux window each</text>
+  <text class="sm" x="294" y="304">Detaching from tmux keeps every worker running.</text>
+  <text class="sm" x="294" y="322">Re-attach any time: docker exec -it ... tmux attach.</text>
+  <text class="sm" x="294" y="340">Workers are Claude Code or pi (both already in the image).</text>
+
+  <rect id="svc" class="box" x="656" y="138" width="204" height="218" rx="8" fill="#eef3fb"/>
+  <text class="b" x="668" y="160">Background helpers</text>
+  <text class="sm" x="668" y="184">fm-watch watcher + session lock</text>
+  <text class="sm" x="668" y="206">no-mistakes daemon</text>
+  <text class="sm" x="668" y="228">lavish-axi server :4387</text>
+  <text class="sm" x="668" y="250">tasks-axi backlog</text>
+  <text class="sm" x="668" y="272">gh-axi / gh (token)</text>
+  <text class="sm" x="668" y="294">firstmate repo in /opt/firstmate</text>
+  <text class="sm" x="668" y="316">All plain Linux processes.</text>
+
+  <rect id="vols" class="box" x="264" y="392" width="612" height="136" rx="10" fill="#fdeaea"/>
+  <text class="b" x="280" y="416">Named Docker volumes (survive container restarts)</text>
+  <text x="280" y="442" class="b">fm-home</text><text class="sm" x="280" y="458">data/ state/ config/</text>
+  <text x="400" y="442" class="b">projects</text><text class="sm" x="400" y="458">clones + treehouse slots</text>
+  <text x="530" y="442" class="b">claude + pi</text><text class="sm" x="530" y="458">logins (already exist)</text>
+  <text x="650" y="442" class="b">gh-auth</text><text class="sm" x="650" y="458">GitHub token (new)</text>
+  <text x="760" y="442" class="b">caches</text><text class="sm" x="760" y="458">pnpm + uv</text>
+  <text class="sm" x="280" y="492">Projects and caches on one Linux volume also unlock hard links: the 67% disk saving measured in agent-box.</text>
+  <text class="sm" x="280" y="512">Trade-off: those files are no longer plain folders in Windows Explorer.</text>
+
+  <path class="arrow" d="M214 95 L280 190" id="a1"/>
+  <title>docagent fm attaches to tmux</title>
+  <path class="arrow" d="M860 220 L890 220 L890 195 L214 195" id="a2"/>
+  <path class="arrow dash" d="M214 288 L264 330" id="a3"/>
+  <path class="arrow" d="M576 372 L576 392" id="a4"/>
+</svg>

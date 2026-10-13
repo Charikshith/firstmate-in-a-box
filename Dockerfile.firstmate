@@ -1,0 +1,63 @@
+# firstmate-in-a-box: the agent-box image plus firstmate's tools. Build agent-box first:
+#   docker build -t agent-box .
+#   docker build -f Dockerfile.firstmate -t agent-box-fm .
+# tested 2026-10-13; bump the pins together and rerun the checks in docs/FIRSTMATE-IN-BOX.md
+ARG BASE=agent-box
+FROM ${BASE}
+
+# amd64 only (Docker Desktop on Windows); the sha256 pins below are for linux-amd64 tarballs
+ARG GH_VERSION=2.102.0
+ARG GH_SHA256=bb766f710eef8ede859c18578c72c327597cd4c8a85b06001b1f3843c6019386
+ARG TREEHOUSE_VERSION=3.1.3
+ARG TREEHOUSE_SHA256=78c820c5872bf9d9d3eb19bbedd75e4804b9258c862238993fa160cf9d215ed8
+ARG NO_MISTAKES_VERSION=1.84.0
+ARG NO_MISTAKES_SHA256=b0fb8a9df412c5fa1fb92a3584ffa1d4d5b4d6e0d1738efa2f8b88320f8bf1c2
+ARG GH_AXI_VERSION=0.1.39
+ARG TASKS_AXI_VERSION=0.2.6
+ARG QUOTA_AXI_VERSION=0.1.61
+ARG LAVISH_AXI_VERSION=0.1.87
+ARG CHROME_DEVTOOLS_AXI_VERSION=0.1.41
+# the repo author's fork of firstmate, main as of 2026-10-13 (Merge pull request #7)
+ARG FIRSTMATE_REPO=https://github.com/Charikshith/firstmate
+ARG FIRSTMATE_COMMIT=13a67441945335ff51604a77618382326a45ac4c
+
+# procps is required: firstmate finds its tmux session through process ancestry
+USER root
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends tmux jq procps bash unzip \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN set -eu; cd /tmp \
+ && curl -fsSL -o gh.tgz "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz" \
+ && echo "${GH_SHA256}  gh.tgz" | sha256sum -c - \
+ && tar xzf gh.tgz --strip-components=2 -C /usr/local/bin "gh_${GH_VERSION}_linux_amd64/bin/gh" \
+ && curl -fsSL -o th.tgz "https://github.com/kunchenguid/treehouse/releases/download/v${TREEHOUSE_VERSION}/treehouse-v${TREEHOUSE_VERSION}-linux-amd64.tar.gz" \
+ && echo "${TREEHOUSE_SHA256}  th.tgz" | sha256sum -c - \
+ && tar xzf th.tgz -C /usr/local/bin treehouse \
+ && curl -fsSL -o nm.tgz "https://github.com/kunchenguid/no-mistakes/releases/download/v${NO_MISTAKES_VERSION}/no-mistakes-v${NO_MISTAKES_VERSION}-linux-amd64.tar.gz" \
+ && echo "${NO_MISTAKES_SHA256}  nm.tgz" | sha256sum -c - \
+ && tar xzf nm.tgz -C /usr/local/bin no-mistakes \
+ && rm -f gh.tgz th.tgz nm.tgz
+
+# main stays checked out (firstmate flags a checkout stranded off its default branch)
+RUN git clone --branch main "${FIRSTMATE_REPO}" /opt/firstmate \
+ && git -C /opt/firstmate reset --hard "${FIRSTMATE_COMMIT}" \
+ && chown -R node:node /opt/firstmate
+
+USER node
+RUN npm install -g "gh-axi@${GH_AXI_VERSION}" "tasks-axi@${TASKS_AXI_VERSION}" "quota-axi@${QUOTA_AXI_VERSION}" \
+      "lavish-axi@${LAVISH_AXI_VERSION}" "chrome-devtools-axi@${CHROME_DEVTOOLS_AXI_VERSION}"
+
+COPY --chmod=755 scripts/fm-box-init.sh /usr/local/bin/fm-box-init
+COPY --chmod=755 scripts/fm-box-entry.sh /usr/local/bin/fm-box-entry
+
+# Everything firstmate writes that must outlive `docagent fm rm` lives in the fm-home volume:
+# its home, the git identity and credential helper, the treehouse worktree pool and the
+# no-mistakes database. Projects are the fm-projects volume mounted at $FM_HOME/projects, gh login is fm-gh.
+ENV FM_HOME=/home/node/fm-home
+ENV GIT_CONFIG_GLOBAL=/home/node/fm-home/.gitconfig
+ENV TREEHOUSE_ROOT=/home/node/fm-home/.treehouse
+ENV NM_HOME=/home/node/fm-home/.no-mistakes
+# mount points created as node so fresh named volumes are writable
+RUN mkdir -p /home/node/fm-home/projects /home/node/.config/gh
+WORKDIR /opt/firstmate
