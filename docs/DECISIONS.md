@@ -29,7 +29,7 @@ Phases and commands: [FIRSTMATE-IN-BOX.md](FIRSTMATE-IN-BOX.md).
 ### Firstmate box: not yet verified
 
 - The three logins (GitHub, Claude, bypass prompt) need a human. Not tried either: an authenticated first-mate session, a real task, workers as tmux windows, treehouse and no-mistakes doing real work in the box, firstmate reconciling after a stop and start.
-- Importing the captain's real data, and whether its briefs (Windows paths) are useful in the box.
+- Importing the repo author's real data, and whether its briefs (Windows paths) are useful in the box.
 - A real Windows reboot (only a Docker Desktop restart was tried); Docker Desktop must be set to start at sign-in.
 - Browser tooling (no Chromium), arm64, network allowlist.
 - `docker stop` kills the agents; whether work in flight is lost depends on firstmate's reconciliation.

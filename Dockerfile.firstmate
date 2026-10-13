@@ -17,7 +17,7 @@ ARG TASKS_AXI_VERSION=0.2.6
 ARG QUOTA_AXI_VERSION=0.1.61
 ARG LAVISH_AXI_VERSION=0.1.87
 ARG CHROME_DEVTOOLS_AXI_VERSION=0.1.41
-# the captain's fork of firstmate, main as of 2026-10-13 (Merge pull request #7)
+# the repo author's fork of firstmate, main as of 2026-10-13 (Merge pull request #7)
 ARG FIRSTMATE_REPO=https://github.com/Charikshith/firstmate
 ARG FIRSTMATE_COMMIT=13a67441945335ff51604a77618382326a45ac4c
 

@@ -1,11 +1,11 @@
 # Copy firstmate's data\ folder (backlog, captain.md, learnings.md, projects.md, briefs...) into the firstmate box's
 # fm-home volume. state\ is left behind on purpose: it is runtime state of tmux windows and worktrees that no longer exist.
-# usage: fm-box-import-data.ps1 [-Source <dir>] [-Force] [-WhatIf]
+# usage: fm-box-import-data.ps1 -Source <path to your firstmate data dir> [-Force] [-WhatIf]
 #   -WhatIf  dry run: report what would be copied and whether it would refuse, change nothing
 #   -Force   copy into a box whose data\ is not empty (same-named files are overwritten, other files stay)
 # The box must be running (docagent fm start). FM_BOX_SUFFIX renames the box like docagent does.
 [CmdletBinding(SupportsShouldProcess)]
-param([string]$Source = 'D:\Code\AI\Agents\firstmate\data', [switch]$Force)
+param([Parameter(Mandatory)][string]$Source, [switch]$Force)
 $ErrorActionPreference = 'Continue'   # Windows PowerShell 5.1 turns native stderr into a terminating error; we check $LASTEXITCODE instead
 
 $name = "firstmate-box$($env:FM_BOX_SUFFIX)"

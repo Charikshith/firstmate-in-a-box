@@ -33,7 +33,7 @@ Environment: `FM_BOX_PORT` (host port, default 4387), `FM_BOX_SUFFIX` (appended 
 2. **Git identity**: `docker exec firstmate-box git config --global user.name "..."` and `user.email`. Stored in the `fm-home` volume.
 3. **Claude login**: `docagent fm attach`, log in with your subscription in the first-mate window. Shares the `agent-box-claude` volume with `docagent cc`, so an existing login is reused.
 4. **Bypass-permissions prompt**: workers run Claude with permissions bypassed. Accept the one-time prompt when it first appears.
-5. **Import data** (optional): `scripts\fm-box-import-data.ps1 -WhatIf` first, then without `-WhatIf`. Refuses a box whose `data\` is not empty unless `-Force`.
+5. **Import data** (optional): `scripts\fm-box-import-data.ps1 -Source <your firstmate data dir> -WhatIf` first, then without `-WhatIf`. Refuses a box whose `data\` is not empty unless `-Force`.
 6. **First project**: ask the first mate to add it. It clones into the `fm-projects` volume, not from `D:\Code`.
 
 ## Stop, restart, reboot
