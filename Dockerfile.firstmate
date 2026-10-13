@@ -1,5 +1,5 @@
 # firstmate-in-a-box: the agent-box image plus firstmate's tools. Build agent-box first:
-#   docker build -t agent-box .
+#   docker build -f Dockerfile.base -t agent-box .
 #   docker build -f Dockerfile.firstmate -t agent-box-fm .
 # tested 2026-10-13; bump the pins together and rerun the checks in docs/FIRSTMATE-IN-BOX.md
 ARG BASE=agent-box

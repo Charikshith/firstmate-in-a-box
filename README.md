@@ -24,9 +24,9 @@ Firstmate is built for Linux. Its Windows port is the part that keeps breaking (
 
 The full plan page, with options compared and risks, is [docs/plan.html](docs/plan.html). Open it in a browser; it follows your light or dark setting. Note it was written before the build, so it still says "nothing here has been built yet"; [docs/DECISIONS.md](docs/DECISIONS.md) records what was actually built and checked.
 
-## The base image is required
+## The base image
 
-`Dockerfile.firstmate` starts with `FROM agent-box`. **The base agent-box Dockerfile is not in this repo.** Its source is in a private repo.
+`Dockerfile.firstmate` starts with `FROM agent-box`. The base image's Dockerfile is `Dockerfile.base` in this repo; build it first and tag it `agent-box`.
 
 What the base image contains:
 
@@ -36,7 +36,7 @@ What the base image contains:
 - pnpm, uv
 - Claude Code and pi
 
-To use this repo you must supply an equivalent image tagged `agent-box` (`docker build -t agent-box .` with your own Dockerfile). `Dockerfile.firstmate` also assumes the home directory `/home/node`, and that `claude` and `pi` are on the `PATH`. Nothing here has been tested against a base other than the original.
+`Dockerfile.firstmate` assumes the home directory `/home/node`, and that `claude` and `pi` are on the `PATH`.
 
 ## Phased plan
 
@@ -57,8 +57,8 @@ Phases 1 to 4 have code here. Phases 5 and 6 are not done (see below).
 You need Docker Desktop on Windows and PowerShell. Put `bin` on your `PATH` so `docagent` resolves (a `docagent.cmd` shim is not included; call `bin\docagent.ps1` or add your own).
 
 ```powershell
-# 1. base image: build it from your own agent-box Dockerfile
-docker build -t agent-box .
+# 1. base image (from this repo root)
+docker build -f Dockerfile.base -t agent-box .
 # 2. firstmate image (from this repo's root)
 docker build -f Dockerfile.firstmate -t agent-box-fm .
 
@@ -85,6 +85,7 @@ Environment variables: `FM_BOX_PORT` (host port, default 4387), `FM_BOX_SUFFIX` 
 
 | Path | What |
 |---|---|
+| `Dockerfile.base` | The `agent-box` base image |
 | `Dockerfile.firstmate` | Adds firstmate's tools to `agent-box` |
 | `bin/docagent.ps1` | The launcher (`cc`, `pi`, and the `fm` subcommands) |
 | `scripts/fm-box-entry.sh` | PID 1 of the box: starts the first mate in tmux |

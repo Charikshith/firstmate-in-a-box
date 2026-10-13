@@ -22,7 +22,7 @@ if ($Tool -eq 'fm') {
             if ($state) { docker start $name | Out-Null }
             else {
                 if (-not (docker images -q $image)) {
-                    throw "docagent: image '$image' not found. Build it: docker build -t agent-box . ; docker build -f Dockerfile.firstmate -t $image ."
+                    throw "docagent: image '$image' not found. Build it: docker build -f Dockerfile.base -t agent-box . ; docker build -f Dockerfile.firstmate -t $image ."
                 }
                 # Never pass ANTHROPIC_API_KEY (keeps Claude Code on the subscription). Port is published on 127.0.0.1 only.
                 docker run -d --init --name $name --restart unless-stopped --stop-timeout 30 `
