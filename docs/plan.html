@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Firstmate inside agent-box</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #111418; --muted: #4a5360; --card: #f3f5f8; --line: #9aa4b2;
+    --accent: #0b5cd5; --ok: #0b6b2e; --warn: #8a4b00; --bad: #a11d1d;
+    --box1: #eef3fb; --box2: #e6f4ea; --box3: #fff4e0; --box4: #f1ecfa; --vol: #fdeaea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1116; --fg: #f1f4f8; --muted: #b3bcc9; --card: #181d25; --line: #6b7686;
+      --accent: #6aa5ff; --ok: #5fd68a; --warn: #ffb454; --bad: #ff7b7b;
+      --box1: #16202f; --box2: #14261b; --box3: #2b2112; --box4: #231d33; --vol: #2d1a1a;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1040px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 1.9rem; margin: 0 0 6px; }
+  h2 { font-size: 1.3rem; margin: 40px 0 10px; padding-top: 8px; border-top: 2px solid var(--line); }
+  h3 { font-size: 1.05rem; margin: 18px 0 6px; }
+  p, li { max-width: 78ch; }
+  .lead { color: var(--muted); font-size: 1.05rem; }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+  .grid > * { min-width: 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+  .card h3 { margin-top: 0; }
+  .tag { display: inline-block; font-size: .78rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); } .acc { color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; font-size: .93rem; display: block; overflow-x: auto; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); min-width: 120px; }
+  th { background: var(--card); }
+  code, pre { font-family: ui-monospace, Consolas, monospace; font-size: .88rem; }
+  code { background: var(--card); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+  pre { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  svg { width: 100%; height: auto; display: block; }
+  svg text { fill: var(--fg); font: 13px system-ui, sans-serif; }
+  svg .sm { font-size: 11.5px; fill: var(--muted); }
+  svg .b { font-weight: 700; }
+  svg .box { stroke: var(--line); stroke-width: 1.5; }
+  svg .arrow { stroke: var(--accent); stroke-width: 2; fill: none; marker-end: url(#ah); }
+  svg .dash { stroke-dasharray: 5 4; }
+  .phase { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 12px; margin: 12px 0; }
+  .num { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--accent); color: var(--accent); display: grid; place-items: center; font-weight: 800; }
+  .callout { border-left: 5px solid var(--warn); background: var(--card); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+  .callout.good { border-color: var(--ok); }
+  .callout.stop { border-color: var(--bad); }
+  ul { padding-left: 1.2rem; }
+  .know { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); margin-top: 10px; }
+  .know > div { min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font-size: .93rem; }
+  .know b { display: block; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--accent); }
+  .who { font-size: .85rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Marrying firstmate and agent-box</h1>
+<p class="lead">Goal: run the whole first-mate crew inside Docker on your Windows machine, with no WSL and no native-Windows workarounds. This page is a plan for you to react to. Nothing here has been built yet.</p>
+
+<div class="callout good">
+  <strong>The core idea.</strong> Firstmate is built for Linux and macOS, and its Windows port is the part that keeps breaking (the lock failure you hit this morning came from exactly that). A Linux container is the platform firstmate was written for. So: build one Linux image that has agent-box's tools <em>plus</em> firstmate's tools, and run the first mate and every worker inside it, each worker as a tmux window.
+</div>
+
+<h2>1. What we have today</h2>
+<div class="grid">
+  <div class="card">
+    <h3>agent-box <span class="tag ok">works</span></h3>
+    <ul>
+      <li>Docker image: Node 22, git, pnpm, uv, Claude Code, pi (versions pinned).</li>
+      <li><code>docagent cc|pi</code> starts <em>one</em> interactive agent, then the container is thrown away (<code>--rm</code>).</li>
+      <li>Projects are bind-mounted from <code>D:\Code</code>. Login and package caches live in named volumes.</li>
+      <li>No git credentials, no <code>gh</code>, no tmux in the image.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>firstmate <span class="tag warn">needs more</span></h3>
+    <ul>
+      <li>Needs a <strong>long-lived</strong> session: a watcher process, a session lock, tmux windows for each worker.</li>
+      <li>Required tools: bash, git, node, <code>gh</code> (logged in), tmux, <code>treehouse</code>, <code>no-mistakes</code>, <code>jq</code>, and the axi tools (gh-axi, tasks-axi, quota-axi, chrome-devtools-axi, lavish-axi).</li>
+      <li>Keeps private state (<code>data/ state/ config/ projects/</code>) in one folder.</li>
+      <li>Needs to push branches and open PRs, so it needs a GitHub token.</li>
+    </ul>
+  </div>
+</div>
+<p>The mismatch is simple: agent-box is "one short-lived agent per command", firstmate is "one long-lived container that supervises many agents". The plan below turns agent-box into the second shape without throwing away the first.</p>
+
+<h2>2. Target picture</h2>
+<svg viewBox="0 0 920 560" role="img" aria-labelledby="t1 d1">
+  <title id="t1">Firstmate running inside one agent-box container</title>
+  <desc id="d1">A Windows host runs Docker Desktop. One long-lived firstmate-box container holds a tmux session with the first mate and worker windows, plus the firstmate repo, watcher, no-mistakes and lavish. Named volumes hold state. The container talks to GitHub and Anthropic.</desc>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+  </defs>
+
+  <rect id="host" class="box" x="8" y="8" width="904" height="544" rx="12" fill="var(--box1)"/>
+  <text class="b" x="24" y="32">Windows host (no WSL)</text>
+
+  <rect id="ps" class="box" x="24" y="52" width="190" height="86" rx="8" fill="var(--box3)"/>
+  <title>PowerShell launcher</title>
+  <text class="b" x="36" y="76">docagent fm</text>
+  <text class="sm" x="36" y="95">start / attach / stop / status</text>
+  <text class="sm" x="36" y="112">(extends today's docagent.ps1)</text>
+
+  <rect id="browser" class="box" x="24" y="160" width="190" height="70" rx="8" fill="var(--box3)"/>
+  <text class="b" x="36" y="184">Your browser</text>
+  <text class="sm" x="36" y="203">Lavish pages on localhost:4387</text>
+
+  <rect id="disk" class="box" x="24" y="252" width="190" height="70" rx="8" fill="var(--box3)"/>
+  <text class="b" x="36" y="276">D:\Code (optional)</text>
+  <text class="sm" x="36" y="295">only if projects stay on Windows</text>
+
+  <rect id="docker" class="box" x="244" y="44" width="652" height="496" rx="10" fill="var(--box2)"/>
+  <text class="b" x="260" y="68">Docker Desktop</text>
+
+  <rect id="ctr" class="box" x="264" y="82" width="612" height="290" rx="10" fill="var(--box4)"/>
+  <text class="b" x="280" y="106">firstmate-box container (long-lived, user "node")</text>
+  <text class="sm" x="280" y="124">image = agent-box + tmux, jq, gh, treehouse, no-mistakes, axi tools, firstmate repo</text>
+
+  <rect id="tmux" class="box" x="280" y="138" width="360" height="218" rx="8" fill="var(--box1)"/>
+  <text class="b" x="294" y="160">tmux session "firstmate"</text>
+  <rect class="box" x="294" y="172" width="332" height="40" rx="6" fill="var(--bg)"/>
+  <text x="306" y="190" class="b">First mate (Claude Code)</text>
+  <text x="306" y="205" class="sm">talks to you, never edits projects</text>
+  <rect class="box" x="294" y="222" width="100" height="56" rx="6" fill="var(--bg)"/>
+  <text x="304" y="244" class="b">worker 1</text><text x="304" y="262" class="sm">treehouse copy</text>
+  <rect class="box" x="402" y="222" width="100" height="56" rx="6" fill="var(--bg)"/>
+  <text x="412" y="244" class="b">worker 2</text><text x="412" y="262" class="sm">treehouse copy</text>
+  <rect class="box dash" x="510" y="222" width="116" height="56" rx="6" fill="var(--bg)"/>
+  <text x="522" y="244" class="b">worker N</text><text x="522" y="262" class="sm">one tmux window each</text>
+  <text class="sm" x="294" y="304">Detaching from tmux keeps every worker running.</text>
+  <text class="sm" x="294" y="322">Re-attach any time: docker exec -it ... tmux attach.</text>
+  <text class="sm" x="294" y="340">Workers are Claude Code or pi (both already in the image).</text>
+
+  <rect id="svc" class="box" x="656" y="138" width="204" height="218" rx="8" fill="var(--box1)"/>
+  <text class="b" x="668" y="160">Background helpers</text>
+  <text class="sm" x="668" y="184">fm-watch watcher + session lock</text>
+  <text class="sm" x="668" y="206">no-mistakes daemon</text>
+  <text class="sm" x="668" y="228">lavish-axi server :4387</text>
+  <text class="sm" x="668" y="250">tasks-axi backlog</text>
+  <text class="sm" x="668" y="272">gh-axi / gh (token)</text>
+  <text class="sm" x="668" y="294">firstmate repo in /opt/firstmate</text>
+  <text class="sm" x="668" y="316">All plain Linux processes.</text>
+
+  <rect id="vols" class="box" x="264" y="392" width="612" height="136" rx="10" fill="var(--vol)"/>
+  <text class="b" x="280" y="416">Named Docker volumes (survive container restarts)</text>
+  <text x="280" y="442" class="b">fm-home</text><text class="sm" x="280" y="458">data/ state/ config/</text>
+  <text x="400" y="442" class="b">projects</text><text class="sm" x="400" y="458">clones + treehouse slots</text>
+  <text x="530" y="442" class="b">claude + pi</text><text class="sm" x="530" y="458">logins (already exist)</text>
+  <text x="650" y="442" class="b">gh-auth</text><text class="sm" x="650" y="458">GitHub token (new)</text>
+  <text x="760" y="442" class="b">caches</text><text class="sm" x="760" y="458">pnpm + uv</text>
+  <text class="sm" x="280" y="492">Projects and caches on one Linux volume also unlock hard links: the 67% disk saving you measured.</text>
+  <text class="sm" x="280" y="512">Trade-off: those files are no longer plain folders in Windows Explorer.</text>
+
+  <path class="arrow" d="M214 95 L280 190" id="a1"/>
+  <title>docagent fm attaches to tmux</title>
+  <path class="arrow" d="M860 220 L890 220 L890 195 L214 195" id="a2"/>
+  <path class="arrow dash" d="M214 288 L264 330" id="a3"/>
+  <path class="arrow" d="M576 372 L576 392" id="a4"/>
+</svg>
+<p class="sm" style="color:var(--muted)">Arrows: launcher attaches you to tmux; Lavish pages are published from the container on port 4387 to your browser; the dashed link is the optional Windows bind mount; the container reads and writes the named volumes. The container also reaches GitHub (push, PRs) and Anthropic (your Claude subscription) over the network.</p>
+
+<div class="callout">
+  <strong>Is it Linux or Windows inside Docker, and where is WSL?</strong>
+  Inside the container it is always <strong>Linux</strong> (Debian). Docker Desktop on Windows runs a small hidden Linux virtual machine to host Linux containers, using WSL 2 or Hyper-V as its own plumbing. That is outside our setup and you never touch it. "No WSL" in agent-box means you do not install or use a WSL distro (such as Ubuntu) yourself. Your Windows folder <code>D:\Code</code> is outside Docker; keeping projects in a Docker volume avoids the slow Windows-to-Linux file translation. You still type <code>docagent ...</code> in PowerShell; everything after that runs in Linux.
+</div>
+
+<h2>3. Options compared</h2>
+<table>
+  <tr><th></th><th>A. One container, workers as tmux windows <span class="tag ok">recommended</span></th><th>B. One container per worker</th><th>C. Firstmate native Windows + agent-box workers</th></tr>
+  <tr><th>Idea</th><td>Everything inside one Linux box. Firstmate runs in its supported Linux/tmux mode.</td><td>First mate starts a new <code>docker run</code> for each worker.</td><td>Keep firstmate in Git Bash; make workers run via <code>docagent</code>.</td></tr>
+  <tr><th>Fits firstmate as is</th><td class="ok">Yes. tmux and treehouse are its reference backend.</td><td class="bad">No. Firstmate has no Docker backend; we would write one.</td><td class="warn">Partly. Still on the Windows port with its open blockers.</td></tr>
+  <tr><th>Effort</th><td>Dockerfile layer + launcher + bootstrap script.</td><td>Large: new backend, worker networking, shared worktrees.</td><td>Medium, but the Windows blockers stay.</td></tr>
+  <tr><th>Isolation</th><td>Workers share one container; the container is the boundary around your PC.</td><td class="ok">Strongest.</td><td>Container only around workers.</td></tr>
+  <tr><th>Main risk</th><td>One container holds your GitHub token and all projects.</td><td>Complexity and docker-socket access.</td><td>Keeps the exact bugs you want to leave behind.</td></tr>
+</table>
+
+<h2>4. The plan, in phases</h2>
+
+<div class="phase"><div class="num">0</div><div>
+  <h3>Decide two things first</h3>
+  <p>These change the design, so they come before any code. See section 6.</p>
+  <ul><li>Do projects live in a Docker volume or stay on <code>D:\Code</code>?</li><li>How does the container get GitHub access?</li></ul>
+  <p class="who">Who: you, about 2 minutes.</p>
+  <div class="know">
+    <div><b>I suggest</b>Projects in a Docker volume, a fine-grained GitHub token limited to named repos, one project only for the first build.</div>
+    <div><b>You'll know it worked</b>You reply "a, a, a" or change any of the three.</div>
+  </div>
+</div></div>
+
+<div class="phase"><div class="num">1</div><div>
+  <h3>Build the image: add firstmate's tools to agent-box</h3>
+  <p>A second Dockerfile that starts <code>FROM agent-box</code> (so Claude Code, pi, Node, pnpm and uv stay exactly as pinned) and adds:</p>
+  <ul>
+    <li>apt: <code>tmux jq procps bash unzip</code> (procps matters: firstmate finds its session by walking process ancestry, which is what failed on Windows).</li>
+    <li><code>gh</code>, <code>treehouse</code> and <code>no-mistakes</code> as pinned Linux release binaries.</li>
+    <li>npm: <code>gh-axi tasks-axi quota-axi lavish-axi chrome-devtools-axi</code>, pinned like the others.</li>
+    <li>The firstmate repo cloned into <code>/opt/firstmate</code> (your fork, so your Windows fixes are not lost).</li>
+  </ul>
+  <p class="sm" style="color:var(--muted)">Browser for chrome-devtools-axi is optional; firstmate lists it as required, so we either install Chromium or accept its warning. Needs a quick test.</p>
+  <p class="who">Who: a worker in the agent-box repo.</p>
+  <div class="know">
+    <div><b>I suggest</b>Pin every version, as agent-box already does. Build it as a second layer on top of the existing image so nothing there changes.</div>
+    <div><b>You'll know it worked</b><code>docker build</code> finishes, and <code>tmux -V</code>, <code>gh --version</code> and <code>treehouse --version</code> each print a version inside the container.</div>
+  </div>
+</div></div>
+
+<div class="phase"><div class="num">2</div><div>
+  <h3>Make the container long-lived</h3>
+  <div class="callout good">
+    <strong>In plain words.</strong> Today, <code>docagent cc</code> works like opening a program: you type it, a container starts, you chat with one agent, and when you quit, the container is deleted. That is fine for one chat.<br>
+    Firstmate is different. It is a team lead that has to keep watching its workers for hours: it waits for them to finish, notices when one gets stuck, and remembers who is doing what. If the container disappeared whenever you closed the terminal window, the team lead would vanish and every worker would be killed with it.<br>
+    So the container runs in the background, like a small always-on computer. Closing your terminal only closes your <em>view</em> of it. The work carries on inside. Next time you type <code>docagent fm</code>, you reconnect to the same running session, the way you reopen a laptop lid. (A reboot or "docker stop" does stop it; state is kept in volumes, so it picks up from disk.)
+  </div>
+  <h3>How do I actually stop it?</h3>
+  <table>
+    <tr><th>You want to...</th><th>Do this</th><th>What happens</th></tr>
+    <tr><td>Just leave for now</td><td>Close the terminal, or press <code>Ctrl+B</code> then <code>D</code></td><td>Nothing stops. Workers keep going.</td></tr>
+    <tr><td>Pause everything (keep all work)</td><td><code>docagent fm stop</code> (= <code>docker stop firstmate-box</code>)</td><td>The container, first mate and workers stop. Volumes keep every file, login and backlog. <code>docagent fm start</code> brings it back and the first mate picks up from disk.</td></tr>
+    <tr><td>Shut down tidily</td><td>Ask the first mate to wrap up first, then <code>docagent fm stop</code></td><td>Workers finish or park cleanly, so nothing is cut off mid-task.</td></tr>
+    <tr><td>Remove the box, keep your data</td><td><code>docker rm firstmate-box</code> after stopping</td><td>The container is deleted; volumes stay. Starting again recreates it.</td></tr>
+    <tr><td>Erase everything</td><td><code>docker volume rm</code> on the fm volumes</td><td class="bad">Permanent: state, clones and logins are gone. Only on purpose.</td></tr>
+  </table>
+  <p>It also uses no CPU while idle, and <code>--restart unless-stopped</code> means it comes back after a reboot <em>unless you stopped it yourself</em>, so a stop stays a stop.</p>
+  <p>Today <code>docagent</code> uses <code>docker run -it --rm</code>. For firstmate the container must stay up when you close the terminal:</p>
+<pre><code>docker run -d --name firstmate-box --restart unless-stopped `
+  -v fm-home:/home/node/fm -v fm-projects:/home/node/fm/projects `
+  -v agent-box-claude:/home/node/.claude -v agent-box-pi:/home/node/.pi `
+  -v fm-gh:/home/node/.config/gh -p 127.0.0.1:4387:4387 `
+  firstmate-box  tmux new -d -s firstmate 'claude' ; sleep infinity</code></pre>
+  <p>Then <code>docagent fm</code> is just <code>docker exec -it firstmate-box tmux attach -t firstmate</code>. Ordinary <code>docagent cc</code> and <code>docagent pi</code> keep working unchanged.</p>
+  <p class="who">Who: a worker, then a quick check by you.</p>
+  <div class="know">
+    <div><b>I suggest</b><code>--restart unless-stopped</code>, and publish port 4387 on <code>127.0.0.1</code> only so nothing outside your PC can reach it.</div>
+    <div><b>You'll know it worked</b>Close the terminal, run <code>docagent fm</code>, and you are back in the same session with workers still running.</div>
+  </div>
+</div></div>
+
+<div class="phase"><div class="num">3</div><div>
+  <h3>First-run bootstrap inside the box</h3>
+  <ul>
+    <li>Set <code>FM_HOME</code> to the <code>fm-home</code> volume and <code>config/backend</code> to <code>tmux</code>.</li>
+    <li><code>gh auth login</code> once (token lands in the <code>fm-gh</code> volume).</li>
+    <li>Claude login once, plus the once-per-machine bypass-permissions prompt (a person has to accept it; the volume remembers it).</li>
+    <li>Register your projects (your own repos) by cloning them into the projects volume.</li>
+  </ul>
+  <p class="who">Who: you, about 10 minutes, once.</p>
+  <div class="know">
+    <div><b>I suggest</b>Do the logins by hand in the first session. Firstmate cannot answer those prompts for you.</div>
+    <div><b>You'll know it worked</b>The login volumes remember everything. Later restarts never ask again.</div>
+  </div>
+</div></div>
+
+<div class="phase"><div class="num">4</div><div>
+  <h3>Bring your existing state across</h3>
+  <p>Copy <code>data/</code> (backlog, <code>captain.md</code>, <code>learnings.md</code>, <code>projects.md</code>) from the Windows home into the volume with <code>docker cp</code>. Leave <code>state/</code> behind: it holds runtime records tied to Windows processes. Finish or park in-flight work before the move.</p>
+  <p class="who">Who: me, with you checking the result.</p>
+  <div class="know">
+    <div><b>I suggest</b>Finish or park in-flight work first, so nothing is mid-flight when we move.</div>
+    <div><b>You'll know it worked</b>Your backlog, preferences and project list show up in the first session in the box.</div>
+  </div>
+</div></div>
+
+<div class="phase"><div class="num">5</div><div>
+  <h3>Prove it with a small task, in this order</h3>
+  <ol>
+    <li>Session start prints <em>lock acquired</em> with no READ-ONLY banner.</li>
+    <li>Spawn one tiny scout; its tmux window appears; detach and re-attach; it keeps running.</li>
+    <li>Stop and start the container; the first mate recovers from disk with no lost work.</li>
+    <li>Open a Lavish page from the container in your Windows browser.</li>
+    <li>Ship one real small issue end to end: worker, no-mistakes pipeline, PR URL.</li>
+  </ol>
+  <p class="who">Who: me, reporting each result to you, including failures.</p>
+  <div class="know">
+    <div><b>I suggest</b>Do not call the move done until all five checks pass. If any fails, we stay on the Windows setup, which is untouched.</div>
+    <div><b>You'll know it worked</b>I show you each result, ending with a real PR link from inside the container.</div>
+  </div>
+</div></div>
+
+<div class="phase"><div class="num">6</div><div>
+  <h3>Polish (only after step 5 passes)</h3>
+  <ul><li>Auto-start on boot, a <code>docagent fm status</code> command, and a short section in agent-box's <code>DECISIONS.md</code>.</li><li>Optional: a restricted network allowlist (GitHub, Anthropic, npm, crates.io).</li></ul>
+  <p class="who">Who: a worker, later.</p>
+  <div class="know">
+    <div><b>I suggest</b>Only after phase 5 passes. The network allowlist is the one to weigh carefully, since it can block tools in surprising ways.</div>
+    <div><b>You'll know it worked</b>The box starts after a reboot without you, and <code>docagent fm status</code> says what is running.</div>
+  </div>
+</div></div>
+
+<div class="callout good"><strong>Cost and safety.</strong> Nothing here deletes or changes your current Windows setup, so you can fall back at any point.</div>
+
+<h2>5. What could go wrong</h2>
+<table>
+  <tr><th>Risk</th><th>Why it matters</th><th>Mitigation</th></tr>
+  <tr><td>GitHub token inside the container</td><td>Firstmate must push and open PRs; agent-box today deliberately has no git credentials.</td><td>Use a fine-grained token limited to the repos you list, stored only in the <code>fm-gh</code> volume. Never mount your SSH keys.</td></tr>
+  <tr><td>Docker Desktop sleeps with your PC</td><td>You already saw the no-mistakes daemon die on sleep; the whole box would pause.</td><td>Same recovery as today (<code>no-mistakes daemon start</code>); firstmate recovers from disk. Needs a test.</td></tr>
+  <tr><td>Files not visible in Windows</td><td>With projects in a volume you cannot open them in a Windows editor directly.</td><td>VS Code Dev Containers attach, or work only through git/PRs. Keep the Windows bind mount as the alternative.</td></tr>
+  <tr><td>Claude dialogs in a fresh box</td><td>Trust, external-imports and bypass prompts appear on first launch and cannot be answered by key from firstmate.</td><td>Answer them once by hand in the first session; firstmate pre-registers trust for worker folders.</td></tr>
+  <tr><td>Memory and CPU</td><td>Several Claude workers plus cargo builds in one Docker Desktop VM.</td><td>Raise Docker Desktop's memory limit; start with 2 workers.</td></tr>
+  <tr><td>Browser-based tools</td><td>chrome-devtools-axi needs a Chrome; none in the image.</td><td>Install Chromium in the image, or skip it and let firstmate warn.</td></tr>
+  <tr><td>Unverified claims</td><td>I read both repos' docs but have not built any of this.</td><td>Phase 5 is the verification gate; nothing is "done" until it passes.</td></tr>
+</table>
+
+<h2>6. Decisions for you</h2>
+<div class="grid">
+  <div class="card">
+    <h3>A. Where do projects live?</h3>
+    <ul>
+      <li><strong>Docker volume</strong> <span class="tag ok">recommended</span>: fastest, hard links, about 67% less disk, no Windows file-sharing slowness. Files are not visible in Explorer.</li>
+      <li><strong>Stay on D:\Code</strong>: you can open files in any Windows tool, but builds are slower and the disk saving stays near 12%. Git worktrees across the Windows/Linux boundary are also fragile.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>B. How does it reach GitHub?</h3>
+    <ul>
+      <li><strong>Fine-grained token in a volume</strong> <span class="tag ok">recommended</span>: simplest, limited to the repos you pick.</li>
+      <li><strong>SSH agent forwarding</strong>: keys never enter the box, but Windows-to-container forwarding is awkward without WSL.</li>
+      <li><strong>No push from the box</strong>: it works only on local branches; you push by hand. Breaks the PR flow.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>C. Scope of the first build</h3>
+    <ul>
+      <li><strong>Smallest first</strong> <span class="tag ok">recommended</span>: phases 0 to 5 with one project, then widen.</li>
+      <li><strong>Everything at once</strong>: all projects and polish in one go. More to debug if phase 5 fails.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout">
+  <strong>Where I would start.</strong> Say "a, a, a" (volume, token, smallest first) and I will queue the image build as a task for a worker in the agent-box repo, with phase 5 as its acceptance test.
+</div>
+
+</main>
+</body>
+</html>
