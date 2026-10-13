@@ -57,8 +57,8 @@ Phases 1 to 4 have code here. Phases 5 and 6 are not done (see below).
 You need Docker Desktop on Windows and PowerShell. Put `bin` on your `PATH` so `docagent` resolves (a `docagent.cmd` shim is not included; call `bin\docagent.ps1` or add your own).
 
 ```powershell
-# 1. base image: build it from your own agent-box Dockerfile
-docker build -t agent-box .
+# 1. base image (from this repo root)
+docker build -f Dockerfile.base -t agent-box .
 # 2. firstmate image (from this repo's root)
 docker build -f Dockerfile.firstmate -t agent-box-fm .
 
