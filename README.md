@@ -113,4 +113,4 @@ What was checked (2026-10-13, Docker Desktop 29.8.2): the image builds and its t
 
 ## License
 
-None yet. Until one is added, all rights are reserved by the author.
+This project is MIT licensed; see [LICENSE](LICENSE).
